@@ -19,16 +19,20 @@
 package org.echauchot;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.flink.api.common.JobStatus;
 import org.apache.flink.api.common.accumulators.IntCounter;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +76,11 @@ public class StreamingJob {
 		 *
 		 */
 
-		DataStream<String> text = env.socketTextStream("127.0.0.1", 8088);
+		Properties properties = new Properties();
+		properties.setProperty("bootstrap.servers", "192.168.1.36:9092");
+		properties.setProperty("group.id", "test");
+		DataStream<String> text = env
+			.addSource(new FlinkKafkaConsumer<>("test", new SimpleStringSchema(), properties));
 		final SingleOutputStreamOperator<String> map = text.map(new RichMapFunction<String, String>() {
 
 			private IntCounter numLines = new IntCounter();
@@ -82,18 +90,21 @@ public class StreamingJob {
 				getRuntimeContext().addAccumulator("num-linues", numLines);
 			}
 
-			@Override public String map(String s) throws Exception {
+			@Override public String map(String element) throws Exception {
 				numLines.add(1);
-				return s;
+				return element;
 			}
 		});
-		map.writeAsText("file:////tmp/out");
+		map.print("mapper output: ");
 		JobClient client = env
 			.executeAsync("Flink Streaming blocking accumulator test");
 		CompletableFuture<JobStatus> statusFuture = client.getJobStatus();
 		LOG.warn("status = " + statusFuture.get());
 
+/*
 		CompletableFuture<Map<String, Object>> accumulatorsFuture = client.getAccumulators();
+		Thread.sleep(30000);
 		LOG.warn("accus = " + accumulatorsFuture.get(5, TimeUnit.SECONDS));
+*/
 	}
 }
