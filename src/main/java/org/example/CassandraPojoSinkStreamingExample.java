@@ -40,7 +40,7 @@ import java.util.Random;
  * <p>The example assumes that a table exists in a local cassandra database, according to the
  * following queries: CREATE KEYSPACE IF NOT EXISTS test WITH replication = {'class':
  * 'SimpleStrategy', 'replication_factor': '1'};
- * CREATE TABLE IF NOT EXISTS test.pojo(id bigint PRIMARY KEY)
+ * CREATE TABLE IF NOT EXISTS test.pojo(id int PRIMARY KEY)
  */
 public class CassandraPojoSinkStreamingExample {
 
@@ -71,7 +71,7 @@ public class CassandraPojoSinkStreamingExample {
    */
   public static class PojoSource implements SourceFunction<Pojo> {
 
-    private static Random longGenerator = new Random();
+    private static Random intGenerator = new Random();
     private volatile boolean shouldBeInterrupted = false;
     private long period;
 
@@ -81,7 +81,7 @@ public class CassandraPojoSinkStreamingExample {
 
     @Override public void run(SourceContext<Pojo> sourceContext) throws Exception {
       while (!shouldBeInterrupted) {
-        sourceContext.collect(new Pojo(longGenerator.nextLong()));
+        sourceContext.collect(new Pojo(intGenerator.nextInt()));
         Thread.sleep(period);
       }
     }
@@ -95,19 +95,19 @@ public class CassandraPojoSinkStreamingExample {
   @Table(keyspace = "test", name = "pojo")
   public static class Pojo {
 
-    @PartitionKey private long id;
+    @PartitionKey private int id;
 
     public Pojo() {}
 
-    public Pojo(long id) {
+    public Pojo(int id) {
       this.id = id;
     }
 
-    public long getId() {
+    public int getId() {
       return id;
     }
 
-    public void setId(long id) {
+    public void setId(int id) {
       this.id = id;
     }
 
