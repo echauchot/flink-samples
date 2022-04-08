@@ -47,18 +47,16 @@ public class DataStreamJob {
             new NumberSequenceSource(0, 10000),
             WatermarkStrategy.noWatermarks(),
             "streaming source");
+    String tmpdir = System.getProperty("java.io.tmpdir");
     FileSink<Long> fileSink =
         FileSink.forRowFormat(
-                new Path("/tmp", "out"), (Encoder<Long>) (element, stream) -> {
+                new Path(tmpdir, "out"), (Encoder<Long>) (element, stream) -> {
                   stream.write(element.byteValue());
                   stream.flush();
-                  stream.close();
                 })
             .build();
 
     dataSource.sinkTo(fileSink);
-
-    env.setParallelism(4);
     env.execute("Flink Java API Skeleton");
   }
 }
