@@ -17,7 +17,9 @@
 package org.example;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
+import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.connectors.cassandra.CassandraSink;
@@ -48,6 +50,7 @@ public class CassandraPojoSinkStreamingExample {
 
   public static void main(String[] args) throws Exception {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    configureCheckpointing(env);
 
     DataStreamSource<Pojo> source =
         env.addSource(new PojoSource(PERIOD), "Infinite Pojo source", TypeInformation.of(Pojo.class));
@@ -64,6 +67,28 @@ public class CassandraPojoSinkStreamingExample {
         .build();
 
     env.execute("Cassandra Pojo Sink Streaming example");
+  }
+
+  private static void configureCheckpointing(StreamExecutionEnvironment env) {
+    // start a checkpoint every 10 min
+    env.enableCheckpointing(600_000L);
+
+    // set mode to exactly-once (this is the default)
+    env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+
+    // checkpoints have to complete within two minute, or are discarded
+    env.getCheckpointConfig().setCheckpointTimeout(120000);
+
+    // allow only one checkpoint to be in progress at the same time
+    env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
+
+    // enable externalized checkpoints which are retained
+    // after job cancellation
+    env.getCheckpointConfig().setExternalizedCheckpointCleanup(
+      CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
+
+    // sets the checkpoint storage where checkpoint snapshots will be written
+    env.getCheckpointConfig().setCheckpointStorage("file:///tmp/flink-checkpoints");
   }
 
   /**
