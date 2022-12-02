@@ -44,7 +44,7 @@ public class DataStreamJob {
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     final DataStreamSource<Long> dataSource =
         env.fromSource(
-            new NumberSequenceSource(0, 10000),
+            new NumberSequenceSource(0, Long.MAX_VALUE),
             WatermarkStrategy.noWatermarks(),
             "streaming source");
     String tmpdir = System.getProperty("java.io.tmpdir");

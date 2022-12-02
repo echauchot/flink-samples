@@ -16,8 +16,18 @@
  */
 package org.example;
 
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Cluster.Builder;
+import com.datastax.driver.mapping.Mapper;
+import com.datastax.driver.mapping.annotations.PartitionKey;
+import com.datastax.driver.mapping.annotations.Table;
+import java.time.Duration;
+import java.util.Objects;
+import java.util.Random;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.CheckpointingMode;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -25,37 +35,34 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.connectors.cassandra.CassandraSink;
 import org.apache.flink.streaming.connectors.cassandra.ClusterBuilder;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Cluster.Builder;
-import com.datastax.driver.mapping.Mapper;
-import com.datastax.driver.mapping.annotations.PartitionKey;
-import com.datastax.driver.mapping.annotations.Table;
-
-import java.util.Objects;
-import java.util.Random;
-
 /**
  * This is an example showing the to use the Pojo Cassandra Sink in the Streaming API.
  *
  * <p>Pojo's have to be annotated with datastax annotations to work with this sink.
  *
  * <p>The example assumes that a table exists in a local cassandra database, according to the
- * following queries: CREATE KEYSPACE IF NOT EXISTS test WITH replication = {'class':
- * 'SimpleStrategy', 'replication_factor': '1'};
- * CREATE TABLE IF NOT EXISTS test.pojo(id bigint PRIMARY KEY)
+ * following queries:
+ * CREATE KEYSPACE IF NOT EXISTS test WITH replication={'class':'SimpleStrategy','replication_factor':'1'};
+ * CREATE TABLE IF NOT EXISTS test.pojo(id bigint PRIMARY KEY);
  */
 public class CassandraPojoSinkStreamingExample {
-
-  private static final long PERIOD = 100L;
+  // source rate is random between 100 and 500 records per second
+  private static final int MAX_PERIOD = 10;
+  private static final int MIN_PERIOD = 2;
+  // 10% of records will be late of a random time between 1s and 10s
+  private static final int MIN_LATENESS = 1000;
+  private static final int MAX_LATENESS = 10000;
 
   public static void main(String[] args) throws Exception {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     configureCheckpointing(env);
 
     DataStreamSource<Pojo> source =
-        env.addSource(new PojoSource(PERIOD), "Infinite Pojo source", TypeInformation.of(Pojo.class));
+        env.addSource(new PojoSource(MIN_PERIOD, MAX_PERIOD, MIN_LATENESS, MAX_LATENESS), "Infinite Pojo source", TypeInformation.of(Pojo.class));
+    final DataStream<Pojo> stream = source.assignTimestampsAndWatermarks(
+      WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(MAX_LATENESS + 1)));
 
-    CassandraSink.addSink(source)
+    CassandraSink.addSink(stream)
         .setClusterBuilder(
             new ClusterBuilder() {
               @Override
@@ -70,14 +77,14 @@ public class CassandraPojoSinkStreamingExample {
   }
 
   private static void configureCheckpointing(StreamExecutionEnvironment env) {
-    // start a checkpoint every 10 min
-    env.enableCheckpointing(600_000L);
+    // start a checkpoint every 2 min
+    env.enableCheckpointing(120_000L);
 
     // set mode to exactly-once (this is the default)
     env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
 
-    // checkpoints have to complete within two minute, or are discarded
-    env.getCheckpointConfig().setCheckpointTimeout(120000);
+    // checkpoints have to complete within 1 minute, or are discarded
+    env.getCheckpointConfig().setCheckpointTimeout(60000);
 
     // allow only one checkpoint to be in progress at the same time
     env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
@@ -96,23 +103,42 @@ public class CassandraPojoSinkStreamingExample {
    */
   public static class PojoSource implements SourceFunction<Pojo> {
 
-    private static Random longGenerator = new Random();
+    private static Random random = new Random();
     private volatile boolean shouldBeInterrupted = false;
-    private long period;
+    private final int minPeriod;
+    private final int maxPeriod;
+    private final int minLateness;
+    private final int maxLateness;
 
-    private PojoSource(long period) {
-      this.period = period;
+    private PojoSource(int minPeriod, int maxPeriod, int minLateness, int maxLateness) {
+      this.minPeriod = minPeriod;
+      this.maxPeriod = maxPeriod;
+      this.minLateness = minLateness;
+      this.maxLateness = maxLateness;
     }
 
-    @Override public void run(SourceContext<Pojo> sourceContext) throws Exception {
+    @Override
+    public void run(SourceContext<Pojo> sourceContext) throws Exception {
+      int i = 0;
+      // emit a Pojo at a random rate between minPeriod and maxPeriod.
+      // Records have timestamps mainly monotonically increasing except 10% of late records (between minLateness and maxLateness)
       while (!shouldBeInterrupted) {
-        sourceContext.collect(new Pojo(longGenerator.nextLong()));
-        Thread.sleep(period);
+        sourceContext.collectWithTimestamp(
+            new Pojo(i),
+            i % 10 == 0
+                ? System.currentTimeMillis() - randomIntInRange(minLateness, maxLateness)
+                : System.currentTimeMillis());
+        Thread.sleep(randomIntInRange(minPeriod, maxPeriod));
+        i++;
       }
     }
-
-    @Override public void cancel() {
+    @Override
+    public void cancel() {
       shouldBeInterrupted = true;
+    }
+
+    private static int randomIntInRange(int min, int max){
+      return random.nextInt(max - min) + min;
     }
   }
 
