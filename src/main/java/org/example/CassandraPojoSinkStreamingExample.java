@@ -32,6 +32,8 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.cassandra.CassandraSink;
 import org.apache.flink.streaming.connectors.cassandra.ClusterBuilder;
 
@@ -46,9 +48,9 @@ import org.apache.flink.streaming.connectors.cassandra.ClusterBuilder;
  * CREATE TABLE IF NOT EXISTS test.pojo(id bigint PRIMARY KEY);
  */
 public class CassandraPojoSinkStreamingExample {
-  // source rate is random between 100 and 500 records per second
-  private static final int MAX_PERIOD = 10;
-  private static final int MIN_PERIOD = 2;
+  // source rate is random between 200 and 1000 records per second
+  private static final int MAX_PERIOD = 5;
+  private static final int MIN_PERIOD = 1;
   // 10% of records will be late of a random time between 1s and 10s
   private static final int MIN_LATENESS = 1000;
   private static final int MAX_LATENESS = 10000;
@@ -61,8 +63,11 @@ public class CassandraPojoSinkStreamingExample {
         env.addSource(new PojoSource(MIN_PERIOD, MAX_PERIOD, MIN_LATENESS, MAX_LATENESS), "Infinite Pojo source", TypeInformation.of(Pojo.class));
     final DataStream<Pojo> stream = source.assignTimestampsAndWatermarks(
       WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(MAX_LATENESS + 1)));
+    final DataStream<Pojo> out = stream.windowAll(
+        TumblingEventTimeWindows.of(Time.seconds(10L)))
+      .reduce((pojo1, pojo2) -> new Pojo(pojo1.getId() + pojo2.getId()));
 
-    CassandraSink.addSink(stream)
+    CassandraSink.addSink(out)
         .setClusterBuilder(
             new ClusterBuilder() {
               @Override
@@ -146,7 +151,8 @@ public class CassandraPojoSinkStreamingExample {
   @Table(keyspace = "test", name = "pojo")
   public static class Pojo {
 
-    @PartitionKey private long id;
+    @PartitionKey
+    private long id;
 
     public Pojo() {}
 
