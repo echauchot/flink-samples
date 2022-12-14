@@ -1,52 +1,10 @@
-[
-  {
-    "my_field1" : 4646464,
-    "my_field2" : 654,
-    "my_field3" : "test1"
-  },
-  {
-    "my_field1" : 4646464,
-    "my_field2" : 654,
-    "my_field3" : "test2"
-  },
-  {
-    "my_field1" : 4646464,
-    "my_field2" : 654,
-    "my_field3" : "test3"
-  },
-  {
-    "my_field1" : 4646464,
-    "my_field2" : 654,
-    "my_field3" : "test4"
-  },
-  {
-    "my_field1" : 4646464,
-    "my_field2" : 654,
-    "my_field3" : "test5"
-  },
-  {
-    "my_field1" : 4646464,
-    "my_field2" : 654,
-    "my_field3" : "test6"
-  },
-  {
-    "my_field1" : 4646464,
-    "my_field2" : 654,
-    "my_field3" : "test7"
-  },
-  {
-    "my_field1" : 4646464,
-    "my_field2" : 654,
-    "my_field3" : "test8"
-  },
-  {
-    "my_field1" : 4646464,
-    "my_field2" : 654,
-    "my_field3" : "test9"
-  },
-  {
-    "my_field1" : 4646464,
-    "my_field2" : 654,
-    "my_field3" : "test10"
-  }
-]
+{"my_field1" : 4646464, "my_field2" : 654, "my_field3" : "test1"}
+{"my_field1" : 4646464, "my_field2" : 654, "my_field3" : "test2"}
+{"my_field1" : 4646464, "my_field2" : 654, "my_field3" : "test3"}
+{"my_field1" : 4646464, "my_field2" : 654, "my_field3" : "test4"}
+{"my_field1" : 4646464, "my_field2" : 654, "my_field3" : "test5"}
+{"my_field1" : 4646464, "my_field2" : 654, "my_field3" : "test6"}
+{"my_field1" : 4646464, "my_field2" : 654, "my_field3" : "test7"}
+{"my_field1" : 4646464, "my_field2" : 654, "my_field3" : "test8"}
+{"my_field1" : 4646464, "my_field2" : 654, "my_field3" : "test9"}
+{"my_field1" : 4646464, "my_field2" : 654, "my_field3" : "test10"}
