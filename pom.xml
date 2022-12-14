@@ -52,7 +52,6 @@ under the License.
 	</repositories>
 
 	<dependencies>
-		<!-- Apache Flink dependencies -->
 		<!--    Flink deps-->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
@@ -94,6 +93,20 @@ under the License.
 
 		<dependency>
 			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-json</artifactId>
+			<version>${flink.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-csv</artifactId>
+			<version>${flink.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-connector-cassandra_${scala.binary.version}</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
@@ -109,6 +122,7 @@ under the License.
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-table-runtime</artifactId>
 			<version>${flink.version}</version>
+			<scope>runtime</scope>
 		</dependency>
 
 		<dependency>
@@ -128,6 +142,7 @@ under the License.
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-table-planner-loader</artifactId>
 			<version>${flink.version}</version>
+			<scope>runtime</scope>
 		</dependency>
 
 		<!--Other deps-->
