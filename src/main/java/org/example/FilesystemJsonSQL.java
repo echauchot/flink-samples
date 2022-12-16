@@ -24,7 +24,7 @@ public class FilesystemJsonSQL {
     // create sink
     tableEnv.executeSql(
         String.format(
-            "CREATE TEMPORARY TABLE SinkTable WITH ('connector' = 'filesystem', 'path' = '%s', 'format' = 'csv') LIKE SourceTable",
+            "CREATE TEMPORARY TABLE SinkTable (my_field1 BIGINT, my_field2 INT,  my_field3 VARCHAR(2147483647)) WITH ('connector' = 'print')",
             outputDir));
 
     Table sourceTable = tableEnv.from("SourceTable");
