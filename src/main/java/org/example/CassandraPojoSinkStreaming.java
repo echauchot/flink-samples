@@ -47,7 +47,7 @@ import org.apache.flink.streaming.connectors.cassandra.ClusterBuilder;
  * CREATE KEYSPACE IF NOT EXISTS test WITH replication={'class':'SimpleStrategy','replication_factor':'1'};
  * CREATE TABLE IF NOT EXISTS test.pojo(id bigint PRIMARY KEY);
  */
-public class CassandraPojoSinkStreamingExample {
+public class CassandraPojoSinkStreaming {
   // source rate is random between 200 and 1000 records per second
   private static final int MAX_PERIOD = 5;
   private static final int MIN_PERIOD = 1;
