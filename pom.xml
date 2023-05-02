@@ -36,7 +36,7 @@ under the License.
 		<maven.compiler.target>${target.java.version}</maven.compiler.target>
 		<log4j.version>2.12.1</log4j.version>
 		<palantir-cassandra-jmx-api.version>2.2.18-1.108.0</palantir-cassandra-jmx-api.version>
-		<flink-connector-cassandra.version>3.1.0-1.16</flink-connector-cassandra.version>
+		<flink-connector-cassandra.version>3.1.0</flink-connector-cassandra.version>
 	</properties>
 
 	<repositories>
