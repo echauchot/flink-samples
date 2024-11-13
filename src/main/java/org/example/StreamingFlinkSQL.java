@@ -37,6 +37,11 @@ public class StreamingFlinkSQL {
 // Create a Table object from a SQL query
     Table table1 = tableEnv.sqlQuery("SELECT f0 FROM TABLE(SESSION(TABLE SourceTable, DESCRIPTOR(event_time), INTERVAL '1' SECOND))");
 
+    /* Aim in SQRL: replace by something like (gap unit is static to second)
+           SELECT f0, endOfSession(event_time, 1) as timeSec
+              FROM SourceTable GROUP BY timeSec;
+     */
+
 // Emit a Table API result Table to a TableSink, same for SQL result
     table1.insertInto("SinkTable").execute();
   }
