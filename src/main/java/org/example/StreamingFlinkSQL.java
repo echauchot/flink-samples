@@ -27,20 +27,21 @@ public class StreamingFlinkSQL {
               .schema(Schema.newBuilder()
                       .column("window_start", DataTypes.TIMESTAMP(3))
                       .column("window_end", DataTypes.TIMESTAMP(3))
-                      .column("count", DataTypes.INT())
+                      .column("total", DataTypes.BIGINT())
                       .build())
             .build());
 
-    // Create a Table object from a SQL query
+    // Select the count of records per session window of 5s gap duration
     Table table1 =
         tableEnv.sqlQuery(
-            "SELECT window_start, window_end, COUNT(f0) AS count"
+            "SELECT window_start, window_end, COUNT(f0) AS total"
                 + "  FROM TABLE(SESSION(TABLE SourceTable, DESCRIPTOR(event_time), INTERVAL '5' SECOND))"
                 + "  GROUP BY window_start, window_end;");
 
     /* ****  TARGET IN SQRL ****
           Replace by something like (gap unit is static to second)
-           SELECT COUNT(f0), endOfSession(event_time, 5) as timeSec
+          
+           SELECT COUNT(f0), endOfSession(event_time, 5) AS timeSec
               FROM SourceTable GROUP BY timeSec;
      */
 
