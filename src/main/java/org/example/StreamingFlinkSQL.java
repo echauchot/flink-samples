@@ -21,24 +21,26 @@ public class StreamingFlinkSQL {
             .option(DataGenConnectorOptions.ROWS_PER_SECOND, 100L)
             .build());
 
-// Create a sink table (using SQL DDL)
-
+    // Create a sink table
     tableEnv.createTemporaryTable("SinkTable",
             TableDescriptor.forConnector("blackhole")
               .schema(Schema.newBuilder()
-                      .column("f0", DataTypes.STRING())
+                      .column("window_start", DataTypes.TIMESTAMP(3))
+                      .column("window_end", DataTypes.TIMESTAMP(3))
+                      .column("count", DataTypes.INT())
                       .build())
             .build());
 
+    // Create a Table object from a SQL query
+    Table table1 =
+        tableEnv.sqlQuery(
+            "SELECT window_start, window_end, COUNT(f0) AS count"
+                + "  FROM TABLE(SESSION(TABLE SourceTable, DESCRIPTOR(event_time), INTERVAL '5' SECOND))"
+                + "  GROUP BY window_start, window_end;");
 
-
-
-
-// Create a Table object from a SQL query
-    Table table1 = tableEnv.sqlQuery("SELECT f0 FROM TABLE(SESSION(TABLE SourceTable, DESCRIPTOR(event_time), INTERVAL '1' SECOND))");
-
-    /* Aim in SQRL: replace by something like (gap unit is static to second)
-           SELECT f0, endOfSession(event_time, 1) as timeSec
+    /* ****  TARGET IN SQRL ****
+          Replace by something like (gap unit is static to second)
+           SELECT COUNT(f0), endOfSession(event_time, 5) as timeSec
               FROM SourceTable GROUP BY timeSec;
      */
 
