@@ -38,12 +38,6 @@ public class StreamingFlinkSQL {
                 + "  FROM TABLE(SESSION(TABLE SourceTable, DESCRIPTOR(event_time), INTERVAL '5' SECOND))"
                 + "  GROUP BY window_start, window_end;");
 
-    /* ****  TARGET IN SQRL ****
-          Replace by something like (gap unit is static to second)
-          
-           SELECT COUNT(f0), endOfSession(event_time, 5) AS timeSec
-              FROM SourceTable GROUP BY timeSec;
-     */
 
 // Emit a Table API result Table to a TableSink, same for SQL result
     table1.insertInto("SinkTable").execute();
